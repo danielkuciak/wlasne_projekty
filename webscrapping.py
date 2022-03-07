@@ -7,7 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 #pobranie zawartosci pliku z wyrazami niepotrzebnymi, tj. (a,o,i,oraz,lub,w,przez... itp)
-with open('test.txt', 'r', encoding='utf-8') as stops:
+with open('stopwords.txt', 'r', encoding='utf-8') as stops:
     stops = list(map(lambda stop: stop.rstrip('\n'), stops))
     stops.extend([',','.','!','-','?',':','[',']','"','\n','—', '…',';','none'])
 
