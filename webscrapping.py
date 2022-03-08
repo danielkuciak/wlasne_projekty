@@ -7,44 +7,55 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 #pobranie zawartosci pliku z wyrazami niepotrzebnymi, tj. (a,o,i,oraz,lub,w,przez... itp)
-with open('stopwords.txt', 'r', encoding='utf-8') as stops:
+with open('test.txt', 'r', encoding='utf-8') as stops:
     stops = list(map(lambda stop: stop.rstrip('\n'), stops))
     stops.extend([',','.','!','-','?',':','[',']','"','\n','—', '…',';','none'])
 
 #przypisanie modelu jezyka polskiego do zmiannej nlp
 nlp = spacy.load('pl_core_news_sm')
 
-#zaladowanie zawartoścci z strony
-url = "https://wolnelektury.pl/katalog/lektura/antygona.html"
-result = requests.get(url)
 
-#wykonanie pieknej zupy z danych ze strony
-doc = BeautifulSoup(result.text,'html.parser')
+class GetWeb:
+    '''POBIERANIE STRONY'''
+    def __init__(self, url):
+        self.url = url
 
-#odnalezenie interesujacych nas kwestii
-tekst = doc.find_all('div', class_='verse')
+    def webContent(self, attribute, class_):
+        result = requests.get(self.url)
+        doc = BeautifulSoup(result.text, 'html.parser')
+        text = doc.find_all(attribute,class_)
+        return text
 
-#zamiana kwestii na slowa, nastepnie sprowadzenie slow to wersji podstawowej
-#oraz sprawdzenie czy wystepuje w stops-liscie
-slowa =[]
-for i in range(len(tekst)):
-    kwestia = nlp(str(tekst[i].string))
-    for token in kwestia:
-        token = str(token.lemma_).lower()
-        if token not in stops:
-            slowa.append(token)
+class AnalysisWeb:
+    '''METODY DO ANALIZY STRON'''
+    def __init__(self,content):
+        self.content = content
 
-#zliczanie słow
-czestotliwosc_slow = Counter(slowa)
+    def transformData(self):
+        words= []
+        for i in range(len(self.content)):
+            sentences = nlp(str(self.content[i].string))
+            for token in sentences:
+                token = str(token.lemma_).lower()
+                if token not in stops:
+                    words.append(token)
+        return words
 
-#sortowanie danych i wybor 20 najczestnych slow
-posortowana = dict(sorted(czestotliwosc_slow.items(), key=lambda x:x[1],reverse=True))
-naj20 = dict(itertools.islice(posortowana.items(),20))
+    def twenty_most_often_words(self):
+        frequecy = Counter(self)
+        sortedd = dict(sorted(frequecy.items(), key=lambda x: x[1], reverse=True))
+        top20 = dict(itertools.islice(sortedd.items(), 20))
+        return top20
 
-#tworzenie tabeli z danych
-tabela = pd.DataFrame.from_dict(naj20, orient='index').reset_index()
-tabela = tabela.rename(columns={'index':'słowo', 0:'licznik'})
 
-#tworzenie wykresu
-tabela.plot(kind='bar', x='slowo' ,y='licznik',title= 'Czestotliwość wystepowanie slow w Antygonie')
-plt.show()
+def showPlot(data,x,y,title):
+    table =  pd.DataFrame.from_dict(data, orient='index').reset_index()
+    table = table.rename(columns={'index':'word', 0:'counter'})
+    table.plot(kind='bar', x= x, y= y, title= title)
+    plt.show()
+
+page = GetWeb("https://wolnelektury.pl/katalog/lektura/antygona.html")
+text = page.webContent('div', class_='verse')
+words = AnalysisWeb(text).transformData()
+top20  = AnalysisWeb.twenty_most_often_words(words)
+showPlot(top20, x='word' ,y='counter',title= 'A frequency of the occurrence of words in the "Antigone"')
