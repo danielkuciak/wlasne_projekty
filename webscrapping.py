@@ -14,6 +14,7 @@ class GetWeb:
         result = requests.get(self.url)
         doc = BeautifulSoup(result.text, 'html.parser')
         text = doc.find_all(attribute,class_)
+        
         return text
 
 class AnalysisWeb:
@@ -30,22 +31,27 @@ class AnalysisWeb:
         words = []
         for i in range(len(self.content)):
             sentences = nlp(str(self.content[i].string))
+            
             for token in sentences:
                 token = str(token.lemma_).lower()
+                
                 if token not in stops:
                     words.append(token)
+                    
         return words
 
     def twenty_most_often_words(self):
         frequecy = Counter(self)
         sortedd = dict(sorted(frequecy.items(), key=lambda x: x[1], reverse=True))
         top20 = dict(itertools.islice(sortedd.items(), 20))
+        
         return top20
 
 def showPlot(data,x,y,title):
     table =  pd.DataFrame.from_dict(data, orient='index').reset_index()
     table = table.rename(columns={'index':'word', 0:'counter'})
     table.plot(kind='bar', x= x, y= y, title= title)
+    
     plt.show()
 
 if __name__ == "__main__":
@@ -53,4 +59,5 @@ if __name__ == "__main__":
     text = page.webContent('div', class_='verse')
     words = AnalysisWeb(text).transformData(file = 'stops.txt', kind = 'r', encoding = 'utf-8')
     top20 = AnalysisWeb.twenty_most_often_words(words)
+    
     showPlot(top20, x='word' ,y='counter',title= 'A frequency of the occurrence of words in the "Antigone"')
